@@ -1,0 +1,16 @@
+workflows:
+
+  fdtd:
+    - validate_materials
+    - validate_mesh
+    - validate_geometry
+    - save_fsp
+    - run_fdtd
+    - load_results
+
+  hfss:
+    - validate_materials
+    - validate_ports
+    - validate_boundary
+    - solve
+    - verify_asol
