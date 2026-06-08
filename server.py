@@ -79,6 +79,7 @@ def hello():
         "server": "Photonics Simulation Expert MCP"
     }
 
+
 @mcp.tool()
 def get_rule(rule_id: str):
     """
@@ -97,7 +98,8 @@ def get_rule(rule_id: str):
                     return {"found": True, "source": file.name, "data": item}
     return {"found": False, "message": f"Rule {rule_id} not found"}
 
-@mcp.tool() 
+
+@mcp.tool()
 def list_knowledge_files():
     """
     List all available knowledge files.
@@ -129,6 +131,7 @@ def get_hfss_bugs():
     return load_yaml(
         "hfss_bugs.yaml"
     )
+
 
 @mcp.tool()
 def get_comsol_rules():
@@ -182,6 +185,7 @@ def get_all_knowledge():
 
     return load_all_knowledge()
 
+
 @mcp.tool()
 def get_workflow(
     workflow_name: str
@@ -192,6 +196,7 @@ def get_workflow(
     Examples:
     - fdtd
     - hfss
+    - tool_selection
     """
 
     data = load_yaml(
@@ -239,6 +244,7 @@ def search_knowledge(
 
     return results
 
+
 @mcp.tool()
 def get_lumerical_api_rules():
 
@@ -246,13 +252,14 @@ def get_lumerical_api_rules():
         "lumerical_api_rules.yaml"
     )
 
+
 @mcp.tool()
 def simulation_guard(
     software: str
 ):
     """
-    Return known warnings
-    for selected software.
+    Return known warnings for selected software.
+    Covers bugs, API rules, and physical pitfalls.
     """
 
     software = software.lower()
@@ -261,29 +268,17 @@ def simulation_guard(
 
     if software == "lumerical":
 
-        data = load_yaml(
-            "lumerical_bugs.yaml"
-        )
-
-        warnings.extend(
-            data.get(
-                "bugs",
-                []
-            )
-        )
+        for key in ("lumerical_bugs.yaml", "lumerical_api_rules.yaml"):
+            data = load_yaml(key)
+            for list_key in ("bugs", "rules"):
+                warnings.extend(data.get(list_key, []))
 
     elif software == "hfss":
 
         for key in ("hfss_bugs.yaml", "hfss_rules.yaml", "pyaedt_rules.yaml"):
             data = load_yaml(key)
-        for list_key in ("bugs", "rules"):
-
-            warnings.extend(
-            data.get(
-                "rules",
-                []
-            )
-        )
+            for list_key in ("bugs", "rules"):
+                warnings.extend(data.get(list_key, []))
 
     elif software == "comsol":
 
@@ -298,10 +293,18 @@ def simulation_guard(
             )
         )
 
+    else:
+
+        return {
+            "error": f"Unknown software: {software}. Supported: lumerical, hfss, comsol"
+        }
+
     return {
         "software": software,
+        "warning_count": len(warnings),
         "warnings": warnings
     }
+
 
 @mcp.tool()
 def get_tool_recommendation(
@@ -311,11 +314,11 @@ def get_tool_recommendation(
     Recommend simulation tool.
 
     Examples:
-    mode_analysis
-    directional_coupler
-    microwave_cpw
-    fullwave_3d
-    electro_optic_modulator
+    - mode_analysis
+    - directional_coupler
+    - microwave_cpw
+    - fullwave_3d
+    - electro_optic_modulator
     """
 
     mapping = {
@@ -360,12 +363,20 @@ def get_tool_recommendation(
         {}
     )
 
+
 @mcp.tool()
 def get_checklist(
     checklist_name: str
 ):
     """
     Return simulation checklist.
+
+    Examples:
+    - lumerical_before_run
+    - hfss_before_solve
+    - comsol_before_run
+    - fdtd_large_model
+    - general_principles
     """
 
     data = load_yaml(
@@ -382,6 +393,7 @@ def get_checklist(
         []
     )
 
+
 # ==========================================
 # Main
 # ==========================================
@@ -392,4 +404,4 @@ if __name__ == "__main__":
         "Photonics Simulation Expert MCP Starting..."
     )
 
-    mcp.run()
+    mcp.run(transport="stdio")
