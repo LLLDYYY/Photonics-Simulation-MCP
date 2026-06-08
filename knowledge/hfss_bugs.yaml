@@ -1,0 +1,21 @@
+bugs:
+
+  - id: HFSS001
+
+    title: BatchSolve Silent Failure
+
+    severity: critical
+
+    workaround:
+
+      verify_asol
+
+  - id: HFSS002
+
+    title: Missing Radiation Boundary
+
+    severity: high
+
+    workaround:
+
+      add_radiation_boundary

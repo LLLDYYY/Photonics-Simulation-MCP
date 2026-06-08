@@ -1,0 +1,25 @@
+bugs:
+
+  - id: LUM001
+
+    title: Negative X Coordinate Hang
+
+    software: Lumerical FDTD
+
+    version: v241
+
+    severity: critical
+
+    workaround:
+
+      shift_geometry_positive_x
+
+  - id: LUM002
+
+    title: fdtd.run Does Not Solve
+
+    severity: critical
+
+    workaround:
+
+      use_fdtd_engine
