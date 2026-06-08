@@ -1,0 +1,132 @@
+rules:
+  - id: HFSS001
+    title: AnisoProperty Required
+    severity: critical
+    incorrect:
+      - "4.571;4.888;4.571"
+    correct:
+      property_type: AnisoProperty
+      component1: "4.571"
+      component2: "4.888"
+      component3: "4.571"
+    note: Semicolon string ignored by HFSS, BatchSolve exits silently
+    verification:
+      - Set extreme value (e.g., component3=100)
+      - Observe S-parameter change
+      - Restore correct value
+
+  - id: HFSS002
+    title: Wave Port Naming
+    requirements:
+      BoundType: "Wave Port"
+      Name:
+        - "1"
+        - "2"
+    note: BoundType must have space ('Wave Port', not 'WavePort'). Name must be numeric string, not 'Port1'.
+
+  - id: HFSS003
+    title: SolutionType Locked
+    severity: critical
+    forbidden:
+      - HFSSDriven
+    required:
+      - HFSS Terminal Network
+    note: SolutionType is project-level property locked at creation. Changing it corrupts file.
+
+  - id: HFSS004
+    title: BatchSolve Silent Failure
+    severity: critical
+    validation:
+      - check_asol
+      - check_profile
+    note: Exit code may still be 0 even on failure. Check .asol file size and Profile content.
+
+  - id: HFSS005
+    title: Empty Material Assignment
+    severity: critical
+    validation:
+      - verify_material_assignment
+    note: Empty string '' causes silent ignore of conductivity. Sigma changes have no effect.
+
+  - id: HFSS006
+    title: Missing Radiation Boundary
+    severity: high
+    validation:
+      - verify_rad_boundary
+    note: LN.aedt lacks Rad1; LN_1.aedt is valid template. Without radiation boundary, n_mw is high and Z0 distorted.
+
+  - id: HFSS007
+    title: Lock File Residue
+    severity: medium
+    workaround:
+      - remove_lock_file
+    note: .lock file residue prevents new solves.
+
+  - id: HFSS008
+    title: SMatrix vs Gamma Impedance Extraction
+    severity: high
+    note: Must extract FullMatrix from SMatrix block only
+    warning:
+      - Do not mistake Gamma or PortImpedance for S-parameters
+    format:
+      - Block0/Block1 for Terminal Solution (PortImpedance and Gamma)
+      - r0/r1 row format for SMatrix
+      - c(real,imag) for complex values
+
+  - id: HFSS009
+    title: DataPoint vs freq Block Distinction
+    severity: medium
+    note: .sd file contains two data block types
+    DataPoint:
+      description: Actual solve points
+      DiscreteSweep: 401 points
+      Interpolating: 7-8 points
+    freq:
+      description: Interpolation sampling points
+      Interpolating: 401 points
+    recommendation:
+      - Use Discrete Sweep for full 401-point S-parameters
+    warning:
+      - Discrete Sweep DataPoint only contains last frequency point
+      - Remaining frequencies are in top-level freq block
+
+  - id: HFSS010
+    title: Alpha Attenuation Unit Conversion
+    severity: critical
+    incorrect_conversion:
+      factor: 8685.89
+      result: 637 dB/mm
+    correct_conversion:
+      formula: "Np/m * 8.68589 / 1000 = dB/mm"
+      note: Factor is 8.68589, not 8685.89
+    verification:
+      method: Cross-check with S21 magnitude
+      example: "S21=-0.36dB@15GHz -> alpha≈0.42dB/mm"
+
+  - id: HFSS011
+    title: Setup and Sweep Format Requirements
+    severity: critical
+    setup:
+      SetupType: HfssDriven
+      note: Must be 'HfssDriven', not 'HFSSDriven'
+      SolveType: Single
+    sweep:
+      structure: Nested
+      correct:
+        - "$begin 'Sweeps' / $begin 'Sweep'"
+      incorrect:
+        - "$begin 'Sweep1'"
+      note: Sweep must use nested Sweeps/Sweep structure, not direct Sweep1 naming
+
+  - id: HFSS012
+    title: SD File Correct Parsing Workflow
+    severity: high
+    steps:
+      - Read entire file
+      - Regex match DataPoint and freq blocks
+      - Match only SMatrix sub-block
+      - Parse FullMatrix
+      - Sort by frequency
+      - Extract ExtraHfssData (Zpi, Zwave, ModalGamma, TerminalTMatrix)
+    warning:
+      - Do not parse Gamma or PortImpedance as S-parameters

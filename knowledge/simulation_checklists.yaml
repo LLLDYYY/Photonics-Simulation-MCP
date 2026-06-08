@@ -1,0 +1,63 @@
+checklists:
+  lumerical_before_run:
+    - verify_api_names
+    - verify_ascii_object_names
+    - verify_positive_x_coordinates
+    - verify_mesh_override_size
+    - verify_monitor_settings
+    - verify_material_anisotropy
+    - save_fsp_before_run
+
+  hfss_before_solve:
+    - verify_material_assignment
+    - verify_radiation_boundary
+    - verify_wave_port_names
+    - verify_solution_type
+    - remove_lock_file
+
+  comsol_before_run:
+    - verify_threecomponent_mode
+    - verify_anisotropic_material
+    - verify_mode_frequency
+    - verify_geometry_union
+
+  fdtd_large_model:
+    - reduce_mesh_override_area
+    - estimate_cell_count
+    - test_small_model_first
+
+  general_principles:
+    - id: GP001
+      principle: Verify API existence first
+      detail: Do not assume function names; check documentation or use dir() to confirm
+      category: api_safety
+
+    - id: GP002
+      principle: Small model before large model
+      detail: Run minimal unit in 3D FDTD first, confirm parameters correct before scaling
+      category: workflow
+
+    - id: GP003
+      principle: Silent failure is most dangerous
+      detail: HFSS BatchSolve, empty material strings — no error but results are completely wrong
+      category: validation
+
+    - id: GP004
+      principle: Cross-validate unit conversions
+      detail: Alpha dB/m to dB/mm conversion was wrong by 1000x; verify with S21 magnitude
+      category: unit_safety
+
+    - id: GP005
+      principle: Anisotropy syntax varies by tool
+      detail: HFSS uses $begin/$end blocks, Lumerical uses semicolon strings, COMSOL uses Java API set()
+      category: material_modeling
+
+    - id: GP006
+      principle: 2D vs 3D inherent differences
+      detail: Results may differ by 20%; not necessarily one is wrong, physical models differ
+      category: model_dimension
+
+    - id: GP007
+      principle: Material properties must be physically verified
+      detail: Empty strings or sigma=0 may silently fail; extreme value testing is good validation
+      category: material_validation

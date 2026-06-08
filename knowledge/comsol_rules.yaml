@@ -1,0 +1,52 @@
+rules:
+  - id: COMSOL001
+    title: Mode Analysis Requires ThreeComponent
+    severity: critical
+    incorrect:
+      - outofplane
+    correct:
+      - threecomponent
+    symptom:
+      - anisotropic_material_error
+
+  - id: COMSOL002
+    title: Anisotropic Permittivity API
+    api:
+      create_group:
+        - Permittivity
+      anisotropy: true
+      properties:
+        epsilonrXX: "4.571"
+        epsilonrYY: "4.888"
+        epsilonrZZ: "4.571"
+
+  - id: COMSOL003
+    title: FormUnion Localization Bug
+    severity: medium
+    trigger:
+      - chinese_version
+    workaround:
+      - geom_run_auto_union
+
+  - id: COMSOL004
+    title: MPh Client Restrictions
+    limitations:
+      - no_GlobalEvaluation
+      - no_EvalGlobal
+    workaround:
+      - java_result_numerical_create
+
+  - id: COMSOL005
+    title: Position Must Be String
+    correct_format:
+      - "x y"
+    incorrect:
+      - numeric_array
+
+  - id: COMSOL006
+    title: Mode Frequency Configuration
+    required:
+      expression:
+        - c_const/lda0
+      physics:
+        - ElectromagneticWaves

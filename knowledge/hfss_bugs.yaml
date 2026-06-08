@@ -1,21 +1,40 @@
 bugs:
-
   - id: HFSS001
-
     title: BatchSolve Silent Failure
-
     severity: critical
-
+    symptom:
+      - exits_in_less_than_2_minutes
+      - exit_code_still_0
+    root_causes:
+      - material_syntax_error
+      - port_format_error
+      - setup_format_error
+    validation:
+      - check_asol_file_size
+      - check_profile_empty
     workaround:
-
-      verify_asol
+      - verify_asol
 
   - id: HFSS002
-
     title: Missing Radiation Boundary
-
     severity: high
-
+    symptom:
+      - n_mw_higher_than_expected
+      - Z0_distorted
+    affected_file: LN.aedt
+    valid_template: LN_1.aedt
     workaround:
+      - add_radiation_boundary
 
-      add_radiation_boundary
+  - id: HFSS003
+    title: Empty Material Value Silent Ignore
+    severity: critical
+    symptom:
+      - sigma_change_has_no_effect
+      - n_mw_unchanged
+    example:
+      sigma_0: n_mw≈2.39
+      sigma_0.2: n_mw≈2.39
+    note: MaterialValue='' causes all conductivity settings to be silently ignored
+    workaround:
+      - verify_material_assignment

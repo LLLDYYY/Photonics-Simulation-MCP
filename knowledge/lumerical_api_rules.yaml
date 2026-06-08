@@ -1,0 +1,93 @@
+rules:
+  - id: API001
+    incorrect: addmodesource
+    correct: addmode
+    scope: FDTD
+
+  - id: API002
+    incorrect: addpolygon
+    correct: addpoly
+    note: addpolygon only available in FDE/MODE, use addpoly in FDTD
+
+  - id: API003
+    incorrect: override_x_mesh
+    correct:
+      - dx
+      - dy
+      - dz
+    note: mesh override object has no override_x_mesh property
+
+  - id: API004
+    incorrect: mode_number
+    correct: mode_selection
+    note: Use numeric index for mode selection (e.g., 2=TM)
+
+  - id: API005
+    topic: anisotropic_object_index
+    correct_format: "2.211;2.138;2.211"
+    note: Semicolon string for object property; numpy array fails for object-level
+
+  - id: API006
+    topic: material_rename
+    recommendation:
+      - rename_immediately_after_creation
+    example: setmaterial(1, "name", "LN_aniso")
+
+  - id: API007
+    topic: embedded_python
+    required_python:
+      - "3.9.9"
+    path: "D:\\Program Files\\Lumerical\\v241\\api\\python\\python.exe"
+    sys_path_add: "D:\\Program Files\\Lumerical\\v241\\api\\python"
+
+  - id: API008
+    topic: waveguide_dimension_reversal
+    note: base_width and base_height are reversed from intuition
+    base_width: Y direction (film thickness / vertical)
+    base_height: Z direction (ridge width / lateral)
+    context: Z is light propagation lateral, Y is film normal direction
+
+  - id: API009
+    topic: DFT_monitor_wavelength
+    issue: wavelength_center and wavelength_span default inactive
+    workaround:
+      - setglobalmonitor("frequency points", N)
+
+  - id: API010
+    topic: anisotropic_material_two_methods
+    method1:
+      name: Material-level anisotropy
+      steps:
+        - addmaterial("Dielectric")
+        - setmaterial(name, "Anisotropy", 1)
+        - setmaterial(name, "Refractive Index", np.array([nx, ny, nz]))
+    method2:
+      name: Object-level property
+      format: "2.211;2.138;2.211"
+      note: numpy array fails for object property, must use semicolon string
+
+  - id: API011
+    topic: structure_group_child_modification
+    issue: Cannot directly modify child objects via API select/modify
+    workaround:
+      - replace_script_rebuild
+    note: Replace setup script to trigger rebuild
+
+  - id: API012
+    topic: fdtd_run_behavior
+    issue: fdtd.run() only toggles Layout/Analysis mode, does not execute solver
+    symptom:
+      - returns in ~8 seconds
+      - no solver execution
+    correct_workflow:
+      - Build model via API
+      - save("xxx.fsp")
+      - subprocess call fdtd-engine.exe -run xxx.fsp
+      - load() to read results
+    note: fdtd.eval() is also unstable for most LSF commands
+
+  - id: API013
+    topic: GUI_executable_name
+    correct: fdtd-solutions.exe
+    incorrect: fdtd-ui.exe
+    note: fdtd-ui.exe does not exist

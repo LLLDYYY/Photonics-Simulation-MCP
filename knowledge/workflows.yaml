@@ -1,5 +1,4 @@
 workflows:
-
   fdtd:
     - validate_materials
     - validate_mesh
@@ -14,3 +13,28 @@ workflows:
     - validate_boundary
     - solve
     - verify_asol
+
+  tool_selection:
+    - task: mode_analysis
+      tool: Lumerical FDE
+      reason: Fast, high accuracy, good anisotropy support
+
+    - task: directional_coupler
+      tool: FDE Supermode + CMT
+      reason: Much faster than FDTD, sufficient accuracy
+
+    - task: cpw_microwave
+      tool: COMSOL 2D FEM
+      reason: 2D cross-section sufficient, consistent with literature methods
+
+    - task: fullwave_3d
+      tool: HFSS
+      reason: Mature, high accuracy, but .aedt format has many pitfalls
+
+    - task: mzi_electrode_vpi
+      tool: FDE + overlap integral
+      reason: No full-wave simulation needed, Gamma + external formula sufficient
+
+    - task: 3d_fdtd_verify
+      tool: Lumerical FDTD
+      reason: GPU acceleration, convenient post-processing, but large mesh volume

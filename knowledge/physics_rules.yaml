@@ -1,0 +1,94 @@
+physics:
+  - id: PHY001
+    topic: XCut_LN_Anisotropy
+    tool:
+      - Lumerical_FDE
+    parameters:
+      nx: 2.211
+      ny: 2.138
+      nz: 2.211
+    notes:
+      - TE_TM_classification_reversed
+    detail: Z-normal FDE, Ey-dominant=TE(n_o), Ex-dominant=TM(n_e)
+
+  - id: PHY002
+    topic: Sidewall_Angle
+    formula:
+      - H1/tan(theta)
+    incorrect_formula:
+      - wt/2*tan(theta)
+    example:
+      H1_nm: 300
+      theta_deg: 63
+      offset_nm: 152.9
+
+  - id: PHY003
+    topic: SPP_Mode_Filter
+    criteria:
+      neff_real_gt: 0.5
+      abs_imag_lt_real: true
+    exclude:
+      - spp_mode
+    note: neff>2.3 modes in CPW electrode FDE are SPP (surface plasmon polariton), not physical guided modes
+
+  - id: PHY004
+    topic: FDE_Frequency
+    recommendation:
+      - c_const_over_lda0
+    note: Default c_const/1[um] causes neff deviation; use c_const/lda0 (=1550nm)
+
+  - id: PHY005
+    topic: HFSS_Silicon_Conductivity
+    observation:
+      - conductivity_increases_nmw
+      - conductivity_decreases_Z0
+    note: Increasing sigma boosts n_mw via slow-wave effect but lowers Z0
+    contradiction: Cannot optimize both n_mw and Z0 simultaneously via sigma alone
+    literature:
+      - Jian_2019
+      sigma: 5000
+      n_mw: 2.3
+      Z0: 50
+    sigma_scan:
+      - sigma: 0
+        n_mw: 1.975
+      - sigma: 5000
+        n_mw: 2.750
+      note: Monotonic increase, saturates at sigma>=5000
+
+  - id: PHY006
+    topic: QuasiTEM_LowFrequency_Failure
+    trigger:
+      - low_frequency
+    symptom:
+      - abnormal_nmw
+    example: n_mw=3.03@1GHz
+    cause: Quasi-TEM assumption invalid at low frequencies; longitudinal field components non-negligible
+
+  - id: PHY007
+    topic: HFSS_3D_vs_COMSOL_2D
+    observation:
+      - 3d_and_2d_results_can_differ_20_percent
+    example:
+      HFSS_3D: n_mw=2.75
+      COMSOL_2D: n_mw=2.29
+      sigma: 5000
+      deviation: "20%"
+    reason:
+      - different_physical_models
+    detail: 3D HFSS has radiation boundary, field leaks to air -> lower epsilon_eff -> lower n_mw. 2D FEM strictly confines field in cross-section -> higher epsilon_eff.
+    note: This is not a parsing error but inherent physical model difference
+
+  - id: PHY008
+    topic: Alpha_Attenuation_Unit_Conversion
+    severity: critical
+    incorrect:
+      factor: 8685.89
+      result: 637 dB/mm
+    correct:
+      formula: "Np/m * 8.68589 / 1000 = dB/mm"
+      factor: 8.68589
+      note: "Divide by 1000 for m->mm"
+    verification:
+      method: Cross-check with S21 magnitude
+      example: "S21=-0.36dB@15GHz -> alpha≈0.42dB/mm"

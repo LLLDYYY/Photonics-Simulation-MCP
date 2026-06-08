@@ -1,0 +1,36 @@
+rules:
+  - id: PYAEDT001
+    title: New Import Path
+    version: v0.28
+    correct:
+      import:
+        - from ansys.aedt.core import Hfss
+      constructor:
+        - Hfss(project=..., design=...)
+    deprecated:
+      import:
+        - from pyaedt import Hfss
+      constructor:
+        - Hfss(projectname=..., designname=...)
+    note: Parameter names changed from projectname/designname to project/design
+
+  - id: PYAEDT002
+    title: ExportNetworkData Unstable
+    severity: medium
+    environments:
+      - non_graphical
+      - grpc
+    recommendation:
+      - batchsolve
+      - parse_sd_file
+    note: Unstable in both non-graphical and gRPC modes
+
+  - id: PYAEDT003
+    title: AnisoProperty gRPC Incompatibility
+    severity: high
+    trigger:
+      - AEDT_2024_R1
+    workaround:
+      - edit_aedt_file_directly
+    note: PyAEDT v0.28 supports AnisoProperty dict format, but gRPC mode incompatible with AEDT 2024 R1
+    alternative: Directly modify $begin/$end permittivity block in .aedt file

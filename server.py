@@ -15,7 +15,7 @@ mcp = FastMCP(
 # Knowledge Directory
 # ==========================================
 
-KNOWLEDGE_DIR = Path("knowledge")
+KNOWLEDGE_DIR = Path(__file__).parent / "knowledge"
 
 
 # ==========================================
@@ -28,7 +28,7 @@ def load_yaml(filename: str):
 
     if not file_path.exists():
 
-        return {}
+        return {"_load_error": f"File not found: {filename}"}
 
     with open(
         file_path,
@@ -79,8 +79,25 @@ def hello():
         "server": "Photonics Simulation Expert MCP"
     }
 
-
 @mcp.tool()
+def get_rule(rule_id: str):
+    """
+    Retrieve a specific rule or bug by its ID across all knowledge files.
+    Examples: "LUM001", "HFSS001", "COMSOL002"
+    """
+    rule_id = rule_id.upper()
+    for file in KNOWLEDGE_DIR.glob("*.yaml"):
+        data = load_yaml(file.name)
+        for list_key in ("bugs", "rules", "physics"):
+            items = data.get(list_key, [])
+            if not isinstance(items, list):
+                continue
+            for item in items:
+                if item.get("id", "").upper() == rule_id:
+                    return {"found": True, "source": file.name, "data": item}
+    return {"found": False, "message": f"Rule {rule_id} not found"}
+
+@mcp.tool() 
 def list_knowledge_files():
     """
     List all available knowledge files.
@@ -113,6 +130,57 @@ def get_hfss_bugs():
         "hfss_bugs.yaml"
     )
 
+@mcp.tool()
+def get_comsol_rules():
+    """
+    Return COMSOL rules.
+    """
+
+    return load_yaml(
+        "comsol_rules.yaml"
+    )
+
+
+@mcp.tool()
+def get_pyaedt_rules():
+    """
+    Return PyAEDT rules.
+    """
+
+    return load_yaml(
+        "pyaedt_rules.yaml"
+    )
+
+
+@mcp.tool()
+def get_physics_rules():
+    """
+    Return photonics physics rules.
+    """
+
+    return load_yaml(
+        "physics_rules.yaml"
+    )
+
+
+@mcp.tool()
+def get_checklists():
+    """
+    Return simulation checklists.
+    """
+
+    return load_yaml(
+        "simulation_checklists.yaml"
+    )
+
+
+@mcp.tool()
+def get_all_knowledge():
+    """
+    Return all loaded knowledge.
+    """
+
+    return load_all_knowledge()
 
 @mcp.tool()
 def get_workflow(
@@ -166,25 +234,25 @@ def search_knowledge(
 
             results.append({
                 "file": file.name,
-                "match": keyword
+                "content": text[:1000]
             })
 
     return results
 
+@mcp.tool()
+def get_lumerical_api_rules():
+
+    return load_yaml(
+        "lumerical_api_rules.yaml"
+    )
 
 @mcp.tool()
 def simulation_guard(
-    software: str,
-    version: str = ""
+    software: str
 ):
     """
-    Return simulation warnings.
-
-    Example:
-    simulation_guard(
-        software="lumerical",
-        version="v241"
-    )
+    Return known warnings
+    for selected software.
     """
 
     software = software.lower()
@@ -193,50 +261,126 @@ def simulation_guard(
 
     if software == "lumerical":
 
-        warnings.extend([
+        data = load_yaml(
+            "lumerical_bugs.yaml"
+        )
 
-            {
-                "id": "LUM001",
-                "warning":
-                "Negative X coordinates may cause hang."
-            },
-
-            {
-                "id": "LUM002",
-                "warning":
-                "Avoid fdtd.run(); use FDTD engine."
-            },
-
-            {
-                "id": "LUM003",
-                "warning":
-                "Use ASCII object names only."
-            }
-        ])
+        warnings.extend(
+            data.get(
+                "bugs",
+                []
+            )
+        )
 
     elif software == "hfss":
 
-        warnings.extend([
+        for key in ("hfss_bugs.yaml", "hfss_rules.yaml", "pyaedt_rules.yaml"):
+            data = load_yaml(key)
+        for list_key in ("bugs", "rules"):
 
-            {
-                "id": "HFSS001",
-                "warning":
-                "Verify .asol file after solve."
-            },
+            warnings.extend(
+            data.get(
+                "rules",
+                []
+            )
+        )
 
-            {
-                "id": "HFSS002",
-                "warning":
-                "Check radiation boundary."
-            }
-        ])
+    elif software == "comsol":
+
+        data = load_yaml(
+            "comsol_rules.yaml"
+        )
+
+        warnings.extend(
+            data.get(
+                "rules",
+                []
+            )
+        )
 
     return {
         "software": software,
-        "version": version,
         "warnings": warnings
     }
 
+@mcp.tool()
+def get_tool_recommendation(
+    task: str
+):
+    """
+    Recommend simulation tool.
+
+    Examples:
+    mode_analysis
+    directional_coupler
+    microwave_cpw
+    fullwave_3d
+    electro_optic_modulator
+    """
+
+    mapping = {
+
+        "mode_analysis": {
+            "tool": "Lumerical FDE",
+            "reason":
+            "fast and accurate"
+        },
+
+        "directional_coupler": {
+            "tool":
+            "FDE Supermode + CMT",
+            "reason":
+            "much faster than FDTD"
+        },
+
+        "microwave_cpw": {
+            "tool":
+            "COMSOL 2D FEM",
+            "reason":
+            "literature standard"
+        },
+
+        "fullwave_3d": {
+            "tool":
+            "HFSS",
+            "reason":
+            "high accuracy"
+        },
+
+        "electro_optic_modulator": {
+            "tool":
+            "FDE + overlap integral",
+            "reason":
+            "avoid expensive full-wave simulation"
+        }
+    }
+
+    return mapping.get(
+        task,
+        {}
+    )
+
+@mcp.tool()
+def get_checklist(
+    checklist_name: str
+):
+    """
+    Return simulation checklist.
+    """
+
+    data = load_yaml(
+        "simulation_checklists.yaml"
+    )
+
+    checklists = data.get(
+        "checklists",
+        {}
+    )
+
+    return checklists.get(
+        checklist_name,
+        []
+    )
 
 # ==========================================
 # Main

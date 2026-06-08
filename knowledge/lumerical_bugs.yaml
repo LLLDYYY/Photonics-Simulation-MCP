@@ -1,25 +1,123 @@
 bugs:
-
   - id: LUM001
-
     title: Negative X Coordinate Hang
-
     software: Lumerical FDTD
-
-    version: v241
-
+    version:
+      - v241
     severity: critical
-
+    trigger:
+      - negative_x_coordinate
+    symptom:
+      - infinite_hang
+    verification:
+      - test_A_negx.py hangs
+      - test_B_posx.py normal (<1s)
+      - test_C_negz.py normal
+    note: Only negative x triggers bug; negative z and positive x are normal
     workaround:
-
-      shift_geometry_positive_x
+      - shift_geometry_positive_x
+    example: Offset all geometry by +2um in x
 
   - id: LUM002
-
     title: fdtd.run Does Not Solve
-
+    software: Lumerical FDTD
     severity: critical
-
+    symptom:
+      - returns_in_seconds
+      - no_solver_execution
     workaround:
+      - save_fsp
+      - use_fdtd_engine
+    correct_workflow:
+      - API build model
+      - save("xxx.fsp")
+      - subprocess fdtd-engine.exe -run xxx.fsp
+      - load() results
+    note: fdtd.eval() also unstable for most LSF commands
 
-      use_fdtd_engine
+  - id: LUM003
+    title: Polygon Z-Only Extrusion
+    software: Lumerical FDTD
+    severity: high
+    symptom:
+      - polygon_cannot_extend_x
+    note: FDTD polygon (addpoly) defaults and only extends along Z
+    implication: X-propagating waveguides cannot use polygon modeling
+    workaround:
+      - use_waveguide_object
+      - use_rectangles
+    related: MODE EME only supports X propagation, incompatible with Z-extended polygon
+
+  - id: LUM004
+    title: 2D FDTD Z-Normal Source Unsupported
+    software: Lumerical FDTD
+    severity: high
+    note: 2D FDTD only supports X-normal and Y-normal mode sources
+    implication: Z-normal (2D cross-section simulation) unavailable in FDTD
+    workaround:
+      - switch_to_3d_fdtd
+
+  - id: LUM005
+    title: GBK Encoding Restriction
+    software: Lumerical
+    severity: medium
+    trigger:
+      - chinese_object_name
+    note: Windows Lumerical Python API uses GBK encoding
+    workaround:
+      - ascii_only_names
+    scope: Object names and material names must be pure ASCII
+
+  - id: LUM006
+    title: DFT Monitor Wavelength Inactive
+    software: Lumerical FDTD
+    severity: medium
+    issue: wavelength_center and wavelength_span properties default inactive
+    workaround:
+      - setglobalmonitor_frequency_points
+
+  - id: LUM007
+    title: Structure Group Child Objects Immutable
+    software: Lumerical
+    severity: medium
+    issue: Cannot select/modify child objects inside Structure Group via API
+    workaround:
+      - replace_script_rebuild
+    note: Use replace-script to replace setup script and trigger rebuild
+    template_method: Use MODE.lms as template, replace-script changes parameters
+
+  - id: LUM008
+    title: Mesh Override Explosion
+    software: Lumerical FDTD
+    severity: critical
+    symptom:
+      - billion_cells
+      - memory_exhaustion
+    example:
+      v4_model: 327x22um x 20nm = 1.2B cells
+      v5_model: 87.6x1.0x4.3um = 45.4M cells
+    lesson: Mesh override only for critical regions (waveguide cross-section), never entire device
+    workaround:
+      - limit_override_region
+
+  - id: LUM009
+    title: PowerShell Path Quoting
+    software: Lumerical FDTD
+    severity: medium
+    trigger:
+      - path_with_spaces
+    example: "D:\\Program Files\\..."
+    incorrect: Test-Path D:\Program Files\... (space treated as new parameter)
+    correct:
+      - 'Test-Path "D:\Program Files\..."'
+      - assign to variable first
+    note: Start-Process requires separating path and arguments
+
+  - id: LUM010
+    title: GUI Executable Name
+    software: Lumerical FDTD
+    severity: low
+    correct: fdtd-solutions.exe
+    incorrect: fdtd-ui.exe
+    note: fdtd-ui.exe does not exist
+    solver: fdtd-engine.exe
