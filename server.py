@@ -55,6 +55,27 @@ def hello():
         "Photonics MCP is running correctly!"
     }
 
+@mcp.tool()
+def search_knowledge(keyword: str):
+    """
+    Search all knowledge files.
+    """
+
+    results = []
+
+    for file in KNOWLEDGE_DIR.glob("*.yaml"):
+
+        text = file.read_text(
+            encoding="utf-8"
+        )
+
+        if keyword.lower() in text.lower():
+
+            results.append(
+                file.name
+            )
+
+    return results
 
 if __name__ == "__main__":
 
