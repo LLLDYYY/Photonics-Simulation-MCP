@@ -38,3 +38,72 @@ bugs:
     note: MaterialValue='' causes all conductivity settings to be silently ignored
     workaround:
       - verify_material_assignment
+
+  - id: HFSS004
+    title: Terminal vs Modal S-Parameter Format
+    severity: high
+    note: Terminal Solution and Modal Solution use completely different .sd block structures
+    terminal_format:
+      PortImpedance: Block0/Block1 format
+      Gamma: Block0/Block1 format
+      SMatrix: r0/r1 row format with c(real,imag) complex values
+    modal_format: Different block structure
+    warning:
+      - Do not parse Gamma or PortImpedance as S-parameters
+      - Must extract FullMatrix from SMatrix block only
+
+  - id: HFSS005
+    title: Discrete vs Interpolating Sweep
+    severity: medium
+    note: Interpolating Sweep only solves 7-8 actual points; full 401-point data requires Discrete Sweep
+    sd_file_blocks:
+      DataPoint: "Actual solve points (Interpolating: 7-8, Discrete: 401)"
+      freq: "Interpolation sampling points (401 for Interpolating)"
+    warning:
+      - Discrete Sweep DataPoint may only contain last frequency point
+      - Remaining frequencies are in top-level freq blocks
+    recommendation:
+      - Use Discrete Sweep for complete frequency-domain data
+
+  - id: HFSS006
+    title: AnisoProperty Block Format Required
+    severity: critical
+    incorrect:
+      - "permittivity='4.571;4.888;4.571'"
+    correct:
+      property_type: AnisoProperty
+      format: "$begin 'permittivity' / property_type='AnisoProperty' / component1/2/3 / $end"
+    note: Semicolon string silently ignored by HFSS
+    verification:
+      - Set extreme value (e.g. component3=100)
+      - Observe S-parameter change
+      - Restore correct value
+
+  - id: HFSS007
+    title: Wave Port Type Must Contain Space
+    severity: high
+    correct:
+      BoundType: "Wave Port"
+    incorrect:
+      BoundType: "WavePort"
+    note: Missing space causes silent WavePort ignore
+
+  - id: HFSS008
+    title: SolutionType Cannot Be Changed
+    severity: critical
+    forbidden:
+      - Changing to HFSSDriven
+    required:
+      - HFSS Terminal Network
+    note: Changing SolutionType corrupts the .aedt file; it is locked at project creation
+
+  - id: HFSS009
+    title: Setup and Sweep Format Requirements
+    severity: critical
+    setup:
+      SetupType: HfssDriven
+      SolveType: Single
+    sweep:
+      correct_structure: "$begin 'Sweeps' / $begin 'Sweep'"
+      incorrect_structure: "$begin 'Sweep1'"
+    note: Must use nested Sweeps/Sweep structure

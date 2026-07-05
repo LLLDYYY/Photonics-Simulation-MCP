@@ -50,3 +50,118 @@ rules:
         - c_const/lda0
       physics:
         - ElectromagneticWaves
+
+  - id: COMSOL007
+    title: MPh Client Cannot Create Integral Operators
+    severity: critical
+    trigger:
+      - chinese_version
+    symptom:
+      - unknown_selection_type
+    note: selection().create('intop1', 'Integral') fails on Chinese COMSOL; 'Integration' type name localized
+    workaround:
+      - user_manual_gui_add
+      - data_export_python_postprocess
+
+  - id: COMSOL008
+    title: EvalGlobal Fails on Non-ModeAnalysis Datasets
+    severity: critical
+    symptom:
+      - cannot_evaluate_expression
+      - undefined_variable
+    affected_datasets:
+      - dset2 (Stationary solution)
+      - Grid2D datasets
+    note: EvalGlobal only works on Solution-type datasets from Mode Analysis; all es variables (V, Ex, es.Ex) fail on dset2
+    workaround:
+      - use_data_export_instead
+
+  - id: COMSOL009
+    title: EvalGlobal Does Not Support Grid2D
+    severity: high
+    symptom:
+      - invalid_dataset_type
+    note: Grid2D datasets created via result().numerical().create() are not supported by EvalGlobal
+    workaround:
+      - use_data_export_instead
+
+  - id: COMSOL010
+    title: Grid2D Property Names
+    severity: medium
+    correct:
+      par1: x axis parameter name
+      parmin1: x minimum
+      parmax1: x maximum
+      res1: x resolution
+      par2: y axis parameter name
+      parmin2: y minimum
+      parmax2: y maximum
+      res2: y resolution
+    incorrect:
+      - xpoints
+      - ypoints
+      - xgrid
+      - ygrid
+
+  - id: COMSOL011
+    title: MPh Client remove() Single Parameter Only
+    severity: medium
+    incorrect:
+      - rn.remove(tag, 0)
+    correct:
+      - rn.remove(tag)
+    note: MPh client mode remove() only accepts single tag argument, unlike Java API
+
+  - id: COMSOL012
+    title: withsol Cross-Study Reference Limited
+    severity: high
+    note: withsol('sol2', expr) syntax works in theory but still subject to dataset type restrictions in EvalGlobal
+    workaround:
+      - data_export_python_postprocess
+
+  - id: COMSOL013
+    title: ES Physics Features May Bind to Wrong StudyStep
+    severity: medium
+    symptom:
+      - sol2_variables_inaccessible
+    note: es physics features (fsp1/zc1/term1/gnd1) may have StudyStep='std1/mode' attribute, binding them to Mode Analysis instead of Stationary study
+    impact: std2 (Stationary) es solve results may not be accessible via standard API
+
+  - id: COMSOL014
+    title: Data Export Is Reliable Workaround for MPh Limitations
+    severity: high
+    note: When EvalGlobal and other MPh client APIs fail, result().export().create('tag','Data') with file output always works
+    workflow:
+      - exp = java.result().export()
+      - data_exp = exp.create('exp1', 'Data')
+      - data_exp.set('data', 'dset1')
+      - data_exp.set('expr', expression_string)
+      - data_exp.set('filename', output_path)
+      - data_exp.set('looplevel', mode_number_string)
+      - data_exp.run()
+    export_format:
+      header: '% prefixed comment lines'
+      data: 'x y val1 val2 ... valN per node'
+    caution:
+      - dset1 and dset2 may have different node counts (e.g. 8515 vs 7555)
+      - Python interpolation (scipy.griddata) needed to align grids
+      - looplevel='all' is invalid, omit or use numeric string per mode
+
+  - id: COMSOL015
+    title: relpermittivity vs relativepermittivity
+    severity: medium
+    note: Both properties can coexist on a material; must verify which is actually active
+    recommendation:
+      - use propertyGroup().create('perm', 'Permittivity') with Anisotropy=1 for reliable anisotropic permittivity
+      - set epsilonrXX/YY/ZZ explicitly
+
+  - id: COMSOL016
+    title: Group Refractive Index Not Directly Output
+    severity: medium
+    note: COMSOL Mode Analysis does not output ewfd.ng; must compute via wavelength scan
+    formula: n_g = n_eff - lambda * dn_eff/d_lambda
+    method:
+      - Sweep wavelength 1500-1600nm (20 points)
+      - Extract neff at each wavelength
+      - Numerical differentiation
+    validation: 5-point and 20-point results nearly identical (linear dispersion within 200nm)

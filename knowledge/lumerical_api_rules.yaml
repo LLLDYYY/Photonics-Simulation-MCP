@@ -91,3 +91,38 @@ rules:
     correct: fdtd-solutions.exe
     incorrect: fdtd-ui.exe
     note: fdtd-ui.exe does not exist
+
+  - id: API014
+    topic: negative_x_coordinate_bug
+    severity: critical
+    software: Lumerical FDTD
+    versions:
+      - v241
+    trigger: geometry with negative x coordinates
+    symptom: infinite hang during simulation
+    verification:
+      - Negative x: hangs indefinitely
+      - Positive x: normal (<1s)
+      - Negative z: normal (only x affected)
+    workaround: Shift all geometry to positive x (e.g. +2um offset)
+
+  - id: API015
+    topic: polygon_z_only_extrusion
+    severity: high
+    software: Lumerical FDTD
+    note: FDTD polygon (addpoly) defaults and only extends along Z direction
+    implication: X-propagating waveguides cannot use polygon modeling
+    workaround:
+      - use_waveguide_object
+      - use_rectangles
+    related: MODE EME only supports X propagation, incompatible with Z-extended polygon
+
+  - id: API016
+    topic: 2d_fdtd_z_normal_unsupported
+    severity: high
+    software: Lumerical FDTD
+    note: 2D FDTD only supports X-normal and Y-normal mode sources
+    implication: Z-normal (2D cross-section simulation) unavailable in FDTD
+    workaround:
+      - switch_to_3d_fdtd
+      - use_MODE_FDE_for_2d_cross_section

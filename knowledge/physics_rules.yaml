@@ -45,15 +45,16 @@ physics:
     note: Increasing sigma boosts n_mw via slow-wave effect but lowers Z0
     contradiction: Cannot optimize both n_mw and Z0 simultaneously via sigma alone
     literature:
-      - Jian_2019
+      ref: Jian_2019
       sigma: 5000
       n_mw: 2.3
       Z0: 50
     sigma_scan:
-      - sigma: 0
-        n_mw: 1.975
-      - sigma: 5000
-        n_mw: 2.750
+      values:
+        - sigma: 0
+          n_mw: 1.975
+        - sigma: 5000
+          n_mw: 2.750
       note: Monotonic increase, saturates at sigma>=5000
 
   - id: PHY006
@@ -92,3 +93,52 @@ physics:
     verification:
       method: Cross-check with S21 magnitude
       example: "S21=-0.36dB@15GHz -> alpha≈0.42dB/mm"
+
+  - id: PHY009
+    topic: LN_Dual_Dielectric_Constants
+    note: LiNbO3 has two distinct dielectric constant sets
+    optical (@1550nm):
+      n_o_squared: 4.571
+      n_e_squared: 4.888
+    microwave_static:
+      eps_11: 43
+      eps_22: 43
+      eps_33: 28
+    impact: Thin LN layer (600nm) contributes minimally to n_mw (filling factor q≈0.12); Si substrate (eps=11.7, q=0.5) dominates effective permittivity
+
+  - id: PHY010
+    topic: neff_vs_group_index_confusion
+    severity: high
+    note: Literature reporting n=2.29 may refer to GROUP refractive index n_g, not effective index n_eff
+    formula: n_g = n_eff - lambda * dn_eff/d_lambda
+    example:
+      neff_mode13: 1.899
+      ng_mode13: 2.379
+      literature_value: 2.29
+      incorrect_deviation: "17% (neff vs ng)"
+      correct_deviation: "3.9% (ng vs ng)"
+    warning: Never compare n_eff with n_g directly
+
+  - id: PHY011
+    topic: VpiL_Direct_Ex_Overlap
+    note: VpiL can be computed directly using mode-weighted average electric field without explicit Gamma normalization
+    formula: "VpiL_MIM = lambda / (4 * ne^3 * r33 * |<Ex>|)"
+    overlap_integral: "<Ex> = integral(|E_opt|^2 * E_x_RF * dA) / integral(|E_opt|^2 * dA)"
+    gamma_relation: "Gamma = <Ex> / (V_applied / gap)"
+    note2: Direct <Ex> approach is simpler and avoids additional normalization errors
+
+  - id: PHY012
+    topic: Electrode_Polarity_No_Effect_On_VpiL
+    note: Swapping Terminal and Ground positions reverses E_x sign but does not affect |<Ex>|, therefore VpiL is unchanged
+
+  - id: PHY013
+    topic: E_field_Range_Grid_Dependence
+    note: Simulated E_x range depends on mesh density near electrode edges (field singularity)
+    example:
+      simulated_range: -90 to 5e5 V/m/V
+      literature_range: 0 to 3e5 V/m/V
+    causes:
+      - negative values are numerical noise inside metal electrodes
+      - higher peak from finer mesh at singularity points
+      - literature may use electrode rounding or truncation
+    recommendation: Set color scale to [0, 3e5] for comparison; does not affect VpiL calculation

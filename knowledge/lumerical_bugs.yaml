@@ -121,3 +121,24 @@ bugs:
     incorrect: fdtd-ui.exe
     note: fdtd-ui.exe does not exist
     solver: fdtd-engine.exe
+
+  - id: LUM011
+    title: Waveguide Dimension Reversal
+    software: Lumerical
+    severity: medium
+    note: base_width and base_height are reversed from intuition
+    mapping:
+      base_width: Y direction (film thickness / vertical)
+      base_height: Z direction (ridge width / lateral)
+    context: Z is light propagation lateral, Y is film normal direction
+
+  - id: LUM012
+    title: Anisotropic Object Property Requires Semicolon String
+    software: Lumerical
+    severity: medium
+    correct_format: "2.211;2.138;2.211"
+    incorrect:
+      - numpy_array
+    note: Object-level index property must use semicolon-separated string; numpy array silently fails
+    alternative:
+      - Material-level anisotropy via setmaterial(name, 'Anisotropy', 1) + Refractive Index array

@@ -38,3 +38,30 @@ workflows:
     - task: 3d_fdtd_verify
       tool: Lumerical FDTD
       reason: GPU acceleration, convenient post-processing, but large mesh volume
+
+  comsol_vpiL:
+    steps:
+      - solve_mode_analysis (std1, ewfd, 20 modes)
+      - solve_stationary (std2, es, V=1V)
+      - export_optical_field (dset1, |E_opt|^2 for all modes)
+      - export_rf_field (dset2, V)
+      - python_interpolate_regular_grid (scipy.griddata, 500x300)
+      - compute_Ex_gradient (numpy.gradient, Ex=-dV/dx)
+      - overlap_integral (mode-weighted <Ex>)
+      - compute_VpiL (lambda / (4*ne^3*r33*|<Ex>|))
+    note: "Data Export + Python post-processing bypasses all MPh client limitations"
+    key_files:
+      - "e2_export.txt (optical field, 8515 nodes x 20 modes)"
+      - "rf_export.txt (RF potential, 7555 nodes)"
+      - "compute_vpiL_v12.py (final working script)"
+
+  hfss_sd_parse:
+    steps:
+      - read_entire_sd_file
+      - regex_match_DataPoint_and_freq_blocks
+      - extract_SMatrix_FullMatrix_only
+      - parse_c_real_imag_complex_values
+      - sort_by_frequency
+      - extract_ExtraHfssData (Zpi, Zwave, ModalGamma)
+    note: "Terminal Solution uses Block0/Block1 for PortImpedance/Gamma, r0/r1 for SMatrix"
+    warning: "Discrete Sweep DataPoint may only contain last frequency; others in freq blocks"

@@ -21,6 +21,16 @@ checklists:
     - verify_mode_frequency
     - verify_geometry_union
 
+  comsol_vpiL:
+    - verify_es_physics_bound_to_std2
+    - verify_intop1_exists_or_plan_data_export
+    - solve_both_studies_std1_mode_and_std2_stationary
+    - export_e2_from_dset1
+    - export_V_from_dset2
+    - verify_node_counts_or_plan_interpolation
+    - run_python_overlap_integral
+    - cross_check_VpiL_against_literature
+
   fdtd_large_model:
     - reduce_mesh_override_area
     - estimate_cell_count
@@ -39,7 +49,7 @@ checklists:
 
     - id: GP003
       principle: Silent failure is most dangerous
-      detail: HFSS BatchSolve, empty material strings — no error but results are completely wrong
+      detail: HFSS BatchSolve, empty material strings, COMSOL EvalGlobal errors — no error but results are completely wrong or missing
       category: validation
 
     - id: GP004
@@ -49,7 +59,7 @@ checklists:
 
     - id: GP005
       principle: Anisotropy syntax varies by tool
-      detail: HFSS uses $begin/$end blocks, Lumerical uses semicolon strings, COMSOL uses Java API set()
+      detail: HFSS uses $begin/$end AnisoProperty blocks, Lumerical uses semicolon strings, COMSOL uses Java API propertyGroup set()
       category: material_modeling
 
     - id: GP006
@@ -61,3 +71,28 @@ checklists:
       principle: Material properties must be physically verified
       detail: Empty strings or sigma=0 may silently fail; extreme value testing is good validation
       category: material_validation
+
+    - id: GP008
+      principle: COMSOL Data Export bypasses MPh client limitations
+      detail: When EvalGlobal/IntVolume/withsol all fail on non-standard datasets, result().export() with file output is the reliable path
+      category: comsol_workaround
+
+    - id: GP009
+      principle: neff and n_g are different quantities
+      detail: Literature values may be group index n_g, not effective index n_eff; never compare directly. Compute n_g via wavelength scan if needed
+      category: physics_concept
+
+    - id: GP010
+      principle: VpiL direct Ex overlap is simpler than Gamma
+      detail: Using mode-weighted average field Ex directly in VpiL formula avoids extra normalization step and potential Gamma errors
+      category: vpiL_calculation
+
+    - id: GP011
+      principle: Different meshes for different solutions
+      detail: COMSOL dset1 and dset2 may have different node counts (e.g. 8515 vs 7555); scipy.griddata interpolation to regular grid is required before overlap integral
+      category: comsol_postprocess
+
+    - id: GP012
+      principle: Coordinate axis conventions differ between literature and simulation
+      detail: Literature E_z may correspond to simulation E_x depending on axis orientation; verify by checking field distribution pattern, not just variable name
+      category: coordinate_convention

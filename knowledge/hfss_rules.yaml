@@ -130,3 +130,21 @@ rules:
       - Extract ExtraHfssData (Zpi, Zwave, ModalGamma, TerminalTMatrix)
     warning:
       - Do not parse Gamma or PortImpedance as S-parameters
+
+  - id: HFSS013
+    title: Objects() References Body ID Not Name
+    severity: medium
+    note: In .aedt WavePort CoverLines and Objects() references, polygon body ID (ParentPartID=BodyID) must be used, not object names
+    example: BodyID=827/839 for port objects
+
+  - id: HFSS014
+    title: Quasi-TEM Low Frequency Failure
+    severity: medium
+    trigger:
+      - low_frequency (below ~5GHz)
+    symptom:
+      - abnormal_nmw (e.g. 3.03 @ 1GHz)
+    cause: Quasi-TEM assumption invalid at low frequencies; longitudinal field components non-negligible
+    recommendation:
+      - Ignore results below 5GHz for quasi-TEM analysis
+      - Use full-wave solver for low-frequency characterization
